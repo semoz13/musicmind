@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_url',
     ];
 
     /**
@@ -45,4 +46,26 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function detect_moods()
+    {
+        $this->hasMany(DetectMood::class);
+    }
+
+    public function favorites()
+    {
+        $this->hasMany(Favorite::class);
+    }
+
+    public function recommendation_logs()
+    {
+        $this->hasMany(RecommendationLog::class);
+    }
+
+    public function search_history()
+    {
+        $this->hasMany(SearchHistory::class);
+    }
+
+
 }
