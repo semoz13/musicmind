@@ -9,6 +9,21 @@ class Song extends Model
 {
     use HasFactory;
 
+    protected $guarded = ['id', 'created_at', 'updated_at'];
+    protected $hidden = ['created_at', 'updated_at'];
+
+    protected $fillable = [
+        'spotify_id',
+        'title',
+        'artist_id',
+        'genre_id',
+        'overview',
+        'mood',
+        'release_date',
+        'preview_url',
+        'image_url'
+    ];    
+
     public function artists()
     {
         $this->belongsTo(Artist::class);

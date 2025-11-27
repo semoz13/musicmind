@@ -9,6 +9,11 @@ class Genre extends Model
 {
     use HasFactory;
     
+    protected $guarded = ['id', 'created_at', 'updated_at'];
+    protected $fillable = [
+        'genre_name'
+    ];
+
     public function songs()
     {
         $this->belongsToMany(Song::class);
