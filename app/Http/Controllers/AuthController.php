@@ -7,12 +7,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-
+//////////////////////////////////////////////////// make sure to format the code properly /////////////////////////////////
 class AuthController extends Controller
 {///////////////////////////////////////////ADD TRY CATCH PELASE ////////////////////////////////////
     public function register(Request $request)
     {
       //you can simply validate the request data like this
+      //u can also make a FormRequest class for better practice
+      // and then u type $validatedData = $request->validated();
+      // and u save four lines of code below
       $validatedData = $request->validate([
         'name' => 'required|string',
         'email' => 'required|email|unique:users,email',
