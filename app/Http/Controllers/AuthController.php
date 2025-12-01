@@ -2,99 +2,72 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
+use App\Services\UserService;
 use Illuminate\Validation\ValidationException;
-//////////////////////////////////////////////////// make sure to format the code properly /////////////////////////////////
+
+use function Laravel\Prompts\error;
+
 class AuthController extends Controller
-{///////////////////////////////////////////ADD TRY CATCH PELASE ////////////////////////////////////
-    public function register(Request $request)
-    {
-      //you can simply validate the request data like this
-      //u can also make a FormRequest class for better practice
-      // and then u type $validatedData = $request->validated();
-      // and u save four lines of code below
-      $validatedData = $request->validate([
-        'name' => 'required|string',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|string|min:6|confirmed',
-    ]);
-
-    $user = User::create($validatedData);
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    // the format of the return should be uniform across all laravel controllers
-    // it should return [status, message, data]
-    //I prefer to make helper functions for this purpose but for now let's keep it simple
-    
-    return response()->json([
-        'status' => 'success',
-        'message' => 'User registered successfully',
-        'data' => [
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ],
-    ], 201);
-}
-
-public function login(Request $request)
 {
-    // Validate input
-    $request->validate([
-        'email' => ['required', 'email'],
-        'password' => ['required'],
-    ]);
-
-    // You can simplify user retrieval and password check using Auth::attempt
-    // Reminder: add try/catch if needed for more detailed error handling
-    if (!Auth::attempt($request->only('email', 'password'))) {
-        throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
-        ]);
+    public function __construct(protected UserService $userService)
+    {
+        $this->userService = $userService;
     }
 
-    // Auth::attempt returns boolean, so get the authenticated user explicitly
-    $user = Auth::user();
+    public function register(RegisterRequest $request)
+    {
+      
+     try{  
+         $validatedData = $request->validated();
+         $info = $this->userService->register($validatedData);
+         $info['user'] = new UserResource($info['user']);
+         return apiResponse(true,'user registered successfully',$info,201);      
+        }
+    catch (\Exception $e)
+        {
+        return apiResponse(false, $e->getMessage(), 500);
+        }
+    
+}
 
-    // Create token for API authentication
-    $token = $user->createToken('auth_token')->plainTextToken;
-// if u notice I kept the response format same as register function for consistency
-// for better practice u can make a helper function to handle such responses
-    return response()->json([
-        'status' => 'success',
-        'message' => 'User logged in successfully',
-        'data' => [
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ],
-    ]);
+public function login(LoginRequest $request)
+{
+    try{
+        $validatedData = $request->validated();
+        $info = $this->userService->login($validatedData);
+        if (isset($info['error'])) {
+            return apiResponse(false , $info['error'] , null ,401 );
+        }
+        return apiResponse(true, 'logged in successfully' ,[
+            'user'=>new UserResource($info['user']),
+            'token'=>$info['token']
+        ]);
+        }
+    catch (\Exception $e)
+        {
+        return apiResponse(false, $e->getMessage(), 500);
+        }
+    
 }
 
 
-public function logout(Request $request)
+public function logout()
 {
-       // Ensure the user is authenticated and a token exists
-        $user = $request->user();
-        $token = $user?->currentAccessToken();
+    $done = $this->userService->logout();
 
-        if (!$user || !$token) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No active session found.',
-            ], 401);
-        }
+    if (!$done) {
+        return apiResponse(false, "No active session found", null, 401);
+    }
 
-        // Delete the current API token only (safe logout)
-        $token->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Logged out successfully',
-        ]);
+    return apiResponse(true, "Logged out successfully");
 }
 }
 
