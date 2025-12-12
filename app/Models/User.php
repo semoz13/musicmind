@@ -48,25 +48,29 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function userable()
+    {
+        return $this->morphTo('userable');
+    } 
 
     public function detect_moods()
     {
-        $this->hasMany(DetectMood::class);
+        return $this->hasMany(DetectMood::class);
     }
 
     public function favorites()
     {
-        $this->hasMany(Favorite::class);
+        return $this->hasMany(Favorite::class);
     }
 
     public function recommendation_logs()
     {
-        $this->hasMany(RecommendationLog::class);
+        return$this->hasMany(RecommendationLog::class);
     }
 
     public function search_history()
     {
-        $this->hasMany(SearchHistory::class);
+        return $this->hasMany(SearchHistory::class);
     }
 
 
