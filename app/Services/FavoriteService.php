@@ -10,37 +10,27 @@ use Illuminate\Validation\ValidationException;
 
 class FavoriteService
 {
-    public function get_favorite_songs()
+    public function getUserFavoriteIds(int $userid): array
     {
-        $user = Auth::user();
-        $favorites = $user->favorites;
-        return $favorites;
+        return Favorite::where('user_id',$userid)
+        ->pluck('spotify_song_id')
+        ->toArray();
     }
 
-    public function store($data)
+    public function addToFavorites(int $user_id,string $spotifySongId): Favorite
     {
-        $user = Auth::user();
-        $user_id = $user->userable->id;
-        $data['user_id'] = $user_id;
-        $favorite = Favorite::create($data);
-        return $favorite;
+        return Favorite::firstorCreate([
+            'user_id' => $user_id,
+            'spotify_song_id' => $spotifySongId
+        ]);
     }
 
-    public function remove_from_favorite(string $id)
+    public function removeFromFavorite(int $user_id,string $spotifySongId): bool
     {
-        $user = Auth::user();
-        $user_id = $user->userable->id;
-        $favorite = Favorite::find($id);
-        if ($favorite && $favorite->user_id == $user_id){
-            $old_favorite = $favorite->delete();
-            return $favorite;
-        } else {
-            throw ValidationException::withMessages([
-                'favorite' => ['favorite not found'],
-            ]);
-        }    
-
-        }
+        return Favorite::where('user_id' , $user_id)
+        ->where('spotify_song_id' , $spotifySongId)
+        ->delete() > 0;    
+    }
 
     
 }

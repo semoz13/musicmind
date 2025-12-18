@@ -48,4 +48,9 @@ class Song extends Model
     {
         $this->belongsToMany(Genre::class);
     }
+
+    public function favoriteByUsers()
+    {
+        return $this->belongsToMany(User::class, 'favorite_song');
+    }
 }

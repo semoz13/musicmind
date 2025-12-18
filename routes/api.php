@@ -20,8 +20,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('songs/index', [SongController::class, 'index']);
 
-    Route::apiResource('favorites', FavoriteController::class);
+    Route::get('favorites/index', [FavoriteController::class ,'index']);
+    Route::post('/favorites', [FavoriteController::class, 'store']);
+    Route::delete('/favorites/{spotify_song_id}', [FavoriteController::class, 'destroy']);
 
-    Route::get('/artist/{id}', [ArtistController::class, 'show']);
+    Route::get('/artist', [ArtistController::class, 'show']);
 
+    Route::get('/test-spotify', function() {
+        $spotifyService = new App\Services\SpotifyService();
+        return response()->json($spotifyService->testConnection());
+    });
 });

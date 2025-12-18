@@ -73,5 +73,10 @@ class User extends Authenticatable
         return $this->hasMany(SearchHistory::class);
     }
 
+   /*  public function favorite_songs()
+    {
+        return $this->belongsToMany(Song::class, 'favorite_song')
+                    ->withTimestamps();
+    }*/
 
 }

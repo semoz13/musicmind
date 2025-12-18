@@ -102,6 +102,7 @@ Auth Section:
 namespace App\Services;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 
 class SpotifyService
@@ -161,29 +162,22 @@ class SpotifyService
         return $token;
     }
 
-    public function getArtist($artistId)
+    
+    
+    public function getSongsByIds(array $ids)
     {
-        try {
-            $response = $this->client->get("artists/{$artistId}", [
-                'headers' => [
-                    'Authorization' => 'Bearer '.$this->accessToken,
-                    'Accept' => 'application/json',
-                ],
-                // DEV: skip certificate verification (use only for local dev)
-                'verify' => false,
-            ]);
-
-            $body = $response->getBody()->getContents();
-            $data = json_decode($body, true);
-
-            return $data;
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $resp = $e->getResponse();
-            $body = $resp ? (string) $resp->getBody() : $e->getMessage();
-            throw new \RuntimeException('Spotify API client error: '.$body, $resp ? $resp->getStatusCode() : 400);
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Spotify API error: '.$e->getMessage(), $e->getCode() ?: 500);
+        if (empty($ids)) {
+            return [];
         }
+
+        $reponse = Http::withOptions([
+            'verify' => false,
+        ])
+        ->withToken($this->getAccessToken())
+            ->get('https://api.spotify.com/v1/tracks',[
+                'ids' =>implode(',', $ids)
+            ]);
+            return $reponse->json('songs') ?? [];
     }
 
     // Your additional methods to interact with Spotify API can be added here
@@ -191,4 +185,34 @@ class SpotifyService
 
     // and for the songs list and the song data and song search functionality
     // you can create methods like getSongs, getSongById, searchSongs, etc.
+
+    public function testConnection()
+    {
+        try {
+            $testArtistId = '4Z8W4fKeB5YxbusRsdQVPb';
+        
+            $response = $this->client->get("artists/{$testArtistId}", [
+                'headers' => [
+                    'Authorization' => 'Bearer '.$this->accessToken,
+                    'Accept' => 'application/json',
+                ],
+                'verify' => false,
+            ]);
+        
+            $body = $response->getBody()->getContents();
+            $data = json_decode($body, true);
+        
+            return [
+                'success' => true,
+                'artist_name' => $data['name'] ?? 'Unknown',
+                'message' => 'Connection successful!'
+            ];
+        
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 }
