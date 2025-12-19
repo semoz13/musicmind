@@ -104,6 +104,7 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SpotifyService
 {
@@ -164,21 +165,7 @@ class SpotifyService
 
     
     
-    public function getSongsByIds(array $ids)
-    {
-        if (empty($ids)) {
-            return [];
-        }
-
-        $reponse = Http::withOptions([
-            'verify' => false,
-        ])
-        ->withToken($this->getAccessToken())
-            ->get('https://api.spotify.com/v1/tracks',[
-                'ids' =>implode(',', $ids)
-            ]);
-            return $reponse->json('songs') ?? [];
-    }
+    
 
     // Your additional methods to interact with Spotify API can be added here
     // such as searchArtists, getArtistTopTracks, etc.

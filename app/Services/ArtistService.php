@@ -6,45 +6,82 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 
+use function Laravel\Prompts\search;
 
 class ArtistService extends SpotifyService
 {
 
-    protected $client;
+    protected string $baseUrl = 'https://api.spotify.com/v1';
 
-    
-    public function __construct()
+    protected function client()
     {
-        $this->client = new Client([
-            'base_uri' => 'https://api.spotify.com/v1/',
-        ]);
-
-        $this->accessToken = $this->getAccessToken();
+        return Http::withOptions([
+            'verify' =>false,
+        ])
+        ->withToken($this->getAccessToken());
     }
 
 
-    public function getArtist($artistId)
-        {
-            try {
-                $response = $this->client->get("artists/{$artistId}", [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->accessToken,
-                        'Accept' => 'application/json',
-                    ],
-                    // DEV: skip certificate verification (use only for local dev)
-                    'verify' => false,
-                ]);
-
-                $body = $response->getBody()->getContents();
-                $data = json_decode($body, true);
-
-                return $data;
-            } catch (\GuzzleHttp\Exception\ClientException $e) {
-                $resp = $e->getResponse();
-                $body = $resp ? (string) $resp->getBody() : $e->getMessage();
-                throw new \RuntimeException('Spotify API client error: '.$body, $resp ? $resp->getStatusCode() : 400);
-            } catch (\Exception $e) {
-                throw new \RuntimeException('Spotify API error: '.$e->getMessage(), $e->getCode() ?: 500);
-            }
+    public function getArtistsByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
         }
+
+        $response = $this->client()->get(
+            $this->baseUrl . '/artists',
+            [
+            'ids' => implode(',' , $ids),
+            ]);
+        if (!$response->successful()){
+            return [];
+        }
+        return $response->json('artists') ?? [];
+            
+    }
+
+    public function searchArtists(string $query, int $limit = 10): array
+    {
+        $response = $this->client()->get(
+            $this->baseUrl . '/search',
+            [
+            'q' => $query,
+            'type' => 'artist',
+            'limit' => $limit,
+            ]);
+        if(!$response->successful()){
+            return [];
+        }
+
+        return $response->json('artists.items') ?? [];
+    }
+
+    public function getArtistTopTracks(string $artistId)
+    {
+        $response = $this->client()->get(
+            $this->baseUrl . "/artists/{$artistId}/top-tracks");
+
+            if (!$response->successful()){
+                return [];
+            }
+            return $response->json('tracks') ?? [];
+
+    }
+
+    public function getArtistAlbums(string $artistId, int $limit=20, int $offset=0): array
+    {
+        $response = $this->client()->get(
+            $this->baseUrl . "/artists/{$artistId}/albums",
+            [
+                'include_groups' => 'album,single',
+                'limit' => $limit,
+                'offset' => $offset,
+            ]
+            );
+
+            if(!$response->successful()){
+                return [];
+            }
+            return $response->json('items') ?? [];
+    }
 }    

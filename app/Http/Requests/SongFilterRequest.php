@@ -22,9 +22,8 @@ class SongFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'genre_id' => 'nullable|integer|exists:genres,id',
-            'artisat_id' => 'nullable|integer|exists:artists,id',
-            'search' => 'nullable|string|max:255',
+            'ids' => 'required|array',
+            'ids.*' => 'string',
         ];
     }
 }
