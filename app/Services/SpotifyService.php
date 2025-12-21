@@ -186,6 +186,88 @@ class SpotifyService
         }
     }
 
+    // PLEASE CHACK THIS URL DOC https://developer.spotify.com/documentation/web-api/reference/get-several-tracks
+    public function getSongsByIds(array|string $songIds)
+    {
+        // Accept either an array of ids or a comma-separated string
+        if (is_string($songIds)) {
+            $songIds = array_filter(array_map('trim', explode(',', $songIds)));
+        }
+
+        // Normalize inputs (support full spotify URLs and URIs)
+        $normalized = [];
+        foreach ($songIds as $id) {
+            $clean = $this->normalizeTrackId($id);
+            if ($this->isValidSpotifyId($clean)) {
+                $normalized[] = $clean;
+            }
+        }
+
+        // Spotify API accepts up to 50 ids per request
+        if (empty($normalized)) {
+            throw new \RuntimeException('No valid Spotify track IDs provided. Provide Spotify IDs or track URLs/URIs.');
+        }
+
+        if (count($normalized) > 50) {
+            // trim to 50 to avoid API error
+            $normalized = array_slice($normalized, 0, 50);
+        }
+
+        try {
+            $idsParam = implode(',', $normalized);
+            $response = $this->client->get('tracks', [
+                'headers' => [
+                    'Authorization' => 'Bearer '.$this->accessToken,
+                    'Accept' => 'application/json',
+                ],
+                'query' => [
+                    'ids' => $idsParam,
+                ],
+                'verify' => false,
+            ]);
+
+            $body = $response->getBody()->getContents();
+            $data = json_decode($body, true);
+
+            return $data;
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $resp = $e->getResponse();
+            $body = $resp ? (string) $resp->getBody() : $e->getMessage();
+            throw new \RuntimeException('Spotify API client error: '.$body, $resp ? $resp->getStatusCode() : 400);
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Spotify API error: '.$e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+
+    private function normalizeTrackId(string $input): string
+    {
+        $input = trim($input);
+
+        // spotify:track:ID
+        if (stripos($input, 'spotify:track:') === 0) {
+            return substr($input, strlen('spotify:track:'));
+        }
+
+        // https://open.spotify.com/track/{id} or with query params
+        if (preg_match('#open\.spotify\.com/track/([A-Za-z0-9]+)#i', $input, $m)) {
+            return $m[1];
+        }
+
+        // If it's a URL with query params like ?si=...
+        if (preg_match('#/track/([A-Za-z0-9]+)\b#i', $input, $m)) {
+            return $m[1];
+        }
+
+        // As a fallback return the raw input (may be already an id)
+        return $input;
+    }
+
+    private function isValidSpotifyId(string $id): bool
+    {
+        // Spotify IDs are typically 22-character base62 strings, but be permissive
+        return (bool) preg_match('/^[A-Za-z0-9]{22}$/', $id);
+    }
+
     // Your additional methods to interact with Spotify API can be added here
     // such as searchArtists, getArtistTopTracks, etc.
 

@@ -18,10 +18,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::apiResource('favorites', FavoriteController::class);
     Route::get('songs/index', [SongController::class, 'index']);
 
-    Route::apiResource('favorites', FavoriteController::class);
-
     Route::get('/artist/{id}', [ArtistController::class, 'show']);
+    // Favortie routes
 
+    Route::post('/songs', [SongController::class, 'getSongsByIds']);
 });
