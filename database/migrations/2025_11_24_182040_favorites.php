@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('spotify_id');
             $table->timestamps();
 
-            $table->unique(['user_id','spotify_song_id']);
         });
     }
 
