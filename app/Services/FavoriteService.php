@@ -37,23 +37,22 @@ class FavoriteService
         return $favorite;
     }
 
-    public function removeFromFavorite(int $user_id,string $spotifySongId): bool
+    public function removeFromFavorite(string $spotify_id)
     {
         $user = Auth::user();
         $user_id = $user->id;
-        $favorite = Favorite::where('spotify_id', $id)
-            ->where('user_id', $user_id)
-            ->first();
-        if ($favorite && $favorite->user_id == $user_id) {
-            $old_favorite = $favorite->delete();
 
-            return $old_favorite;
-        } else {
+        $favorite = Favorite::where('user_id', $user_id)
+            ->where('spotify_id', $spotify_id)
+            ->first();
+        if (! $favorite) {
             throw ValidationException::withMessages([
-                'favorite' => ['favorite not found'],
+                'favorite' => ['Favorite song not found.'],
             ]);
         }
+        $favorite->delete();
 
+        return $favorite;
     }
 
     public function get_favorite_songs()

@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Favorite;
-use auth;
-use Illuminate\Http\Request;
 use App\Services\FavoriteService;
 use App\Services\SpotifyService;
 use Illuminate\Http\Request;
@@ -51,10 +49,10 @@ class FavoriteController extends Controller
         return apiResponse(true, 'created', $favorite, 201);
     }
 
-    public function destroy(Request $request , string $spotifySongId)
+    public function destroy(Request $request, string $spotifySongId)
     {
         try {
-            $favorite = $this->favoriteService->remove_from_favorite($id);
+            $favorite = $this->favoriteService->removeFromFavorite($spotifySongId);
 
             return apiResponse(true, 'deleted', $favorite);
         } catch (ValidationException $e) {
