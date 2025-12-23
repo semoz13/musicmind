@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Song;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -13,10 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('favorites', function (Blueprint $table){
+        Schema::create('favorites', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete()->cascadeOnUpdate();
-            $table->string('spotify_song_id');
+            $table->string('spotify_id');
             $table->timestamps();
 
             $table->unique(['user_id','spotify_song_id']);
