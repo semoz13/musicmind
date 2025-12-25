@@ -4,25 +4,33 @@ namespace App\Services;
 
 use App\Models\Song;
 use App\Models\User;
+use App\Services\SpotifyService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\support\facades\Http;
 use Illuminate\support\facades\Cache;
-use Illuminate\Support\Facades\Auth;
 
-class SongService extends SpotifyService
+class SongService 
 {
+    protected SpotifyService $spotifyService;
+
     protected string $baseUrl = 'https://api.spotify.com/v1';
-    
     
     protected function client()
     {
         return Http::withOptions([
             'verify' => false,
-        ])->withToken($this->getAccessToken());
+        ])->withToken($this->spotifyService->getAccessToken());
 
     }
+
+    public function __construct(SpotifyService $spotifyService)
+    {
+        $this->spotifyService = $spotifyService;
+    } 
     
     public function getSongsByIds(array $ids)
     {
+        
         if (empty($ids)) {
             return [];
         }
@@ -31,12 +39,12 @@ class SongService extends SpotifyService
             'ids' => implode(',' , $ids),
         ]);
 
-        return $response->json('tracks') ?? [];
-
-
         if (!$response->successful()){
             return [];
         }
+        
+        return $response->json('tracks') ?? [];
+
     }
 
     public function searchSongs(string $query, int $limit = 10): array
@@ -85,4 +93,6 @@ class SongService extends SpotifyService
 
         return $songs;
     }
+
+    
 }

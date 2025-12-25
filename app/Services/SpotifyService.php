@@ -108,7 +108,7 @@ use Illuminate\Support\Facades\Log;
 
 class SpotifyService
 {
-    protected $client;
+    protected Client $client;
 
     protected $accessToken;
 
@@ -248,6 +248,53 @@ class SpotifyService
         // Spotify IDs are typically 22-character base62 strings, but be permissive
         return (bool) preg_match('/^[A-Za-z0-9]{22}$/', $id);
     }
+
+    public function getAudioFeaturesByIds(array $spotifyIds): array
+    {
+        logger()->info('AudioFeatures: request ids', [
+            'ids' => $spotifyIds,
+        ]);
+
+        if (empty($spotifyIds)){
+            return [];
+        }
+        try{
+        $response = $this->client->get('audio-features', [
+            'headers' =>[
+                'Authorization' => 'Bearer' . $this->accessToken,
+                'Accept' => 'application/json',
+            ],
+            'query' =>[
+                'ids' => implode(',' , $spotifyIds),
+            ],
+            'verify' => false,
+        ]);
+        $body = $response->getBody()->getContents();
+        logger()->info('AudioFeatures: response status', [
+            'status' => $response->getStatusCode(),
+        ]);
+        $data = json_decode($body, true);
+        logger()->info('AudioFeatures: raw count', [
+            'count' => count($data['audio_features'] ?? []),
+        ]);
+
+        return collect($data('audio_features')?? [])
+            ->filter()
+            ->keyBy('id')
+            ->toArray();
+        } catch (\Exception $e) {
+            Log::error('spotify audio-feature error',[
+                'message' =>$e->getMessage(),
+            ]);
+            return [];
+        }
+
+    }
+
+    
+
+
+    
 
     // Your additional methods to interact with Spotify API can be added here
     // such as searchArtists, getArtistTopTracks, etc.

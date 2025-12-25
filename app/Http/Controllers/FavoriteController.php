@@ -59,4 +59,15 @@ class FavoriteController extends Controller
             return apiResponse(false, $e->getMessage(), [], 404);
         }
     }
+
+    public function filterByMood(Request $request)
+    {
+        $data = $request->validate([
+            'mood' => 'required|string|in:chill,happy,sad,energetic,party,focus',
+        ]);
+
+        $songs = $this->favoriteService->filterFavoritesByMood($data['mood']);
+        return apiResponse(true, 'favorites filtered by mood', $songs, 200);
+    }
+
 }

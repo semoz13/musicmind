@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SongFilterRequest;
+use App\Services\RecommendationsService;
 use App\Services\SongService;
 use App\Services\SpotifyService;
 use Illuminate\Http\Request;
@@ -47,4 +48,39 @@ class SongController extends Controller
             return apiResponse(false, $e->getMessage(), null, 400);
         }
     }
+
+    public function recommendByMood(
+        Request $request ,
+        RecommendationsService $recommendationsService,
+        SongService $songService
+    ){
+        $data = $request->validate([
+            'happines' => 'requird|numeric|min:0|max:10',
+            'sadness' => 'requird|numeric|min:0|max:10',
+            'energy' => 'requird|numeric|min:0|max:10',
+            'calmness' => 'requird|numeric|min:0|max:10',
+            'danceability' => 'requird|numeric|min:0|max:10',
+            'tempo' => 'requird|numeric|min:0|max:10',
+        ]);
+
+        $modelResults = $recommendationsService->recommend($data);
+
+        $finalSongs=[];
+
+        foreach ($modelResults as $song){
+            $query = $song['track_name'] . '' . $song['artists'];
+            $spotifyResult = $songService->searchSongs($query, 1);
+            if(!empty($spotifyResult['tracks']['items'][0])){
+                $finalSongs[] = [
+                    'model_data'=>$song,
+                    'spotify_data'=>$spotifyResult['tracks']['items'][0],
+                ];
+            }
+        }
+        return response()->json([
+            'recommendations' => $finalSongs
+        ]);
+    }
+
+    
 }
