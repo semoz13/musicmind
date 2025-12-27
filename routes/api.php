@@ -13,7 +13,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware('auth:sanctum')->put('/profile', [UserController::class, 'updateProfile']);
+Route::middleware('auth:sanctum')->post('/profile', [UserController::class, 'updateProfile']);
 Route::middleware('auth:sanctum')->post('/change-password', [UserController::class, 'changePassword']);
 
 
@@ -29,9 +29,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/songs', [SongController::class, 'getSongsByIds']);
 
   
-    Route::apiResource('favorites', FavoriteController::class);
+    Route::post('favorites/add-to-favorite', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{spotify_song_id}', [FavoriteController::class, 'destroy']);
-    Route::post('/favorites/filter-by-mood', [FavoriteController::class, 'filterByMood']);
+    Route::get('/favorites/index', [FavoriteController::class, 'index']);
+    Route::get('/favorites/filter-by-mood', [FavoriteController::class, 'filterByMood']);
 
     Route::get('/artist', [ArtistController::class, 'getArtists']);
     Route::get('/artist/search', [ArtistController::class, 'search']);

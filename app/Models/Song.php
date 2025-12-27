@@ -53,4 +53,8 @@ class Song extends Model
     {
         return $this->belongsToMany(User::class, 'favorite_song');
     }
+    public function audioFeature()
+    {
+        return $this->hasOne(AudioFeature::class);
+    }
 }

@@ -22,10 +22,18 @@ class UserController extends Controller
     public function updateProfile(UpdateProfileRequest $request)
     {
     try {
-        $user = $this->userService->updateProfile($request->validated());
-
-        return apiResponse(true, 'Profile updated successfully', [
-            'user' => new UserResource($user),
+        if (!$request->hasFile('avatar')) {
+            return response()->json([
+                'error' => 'No file received'
+            ], 400);
+        }
+    
+        $path = $request->file('avatar')->store('avatars', 'public');
+    
+        return response()->json([
+            'saved' => true,
+            'path' => $path,
+            'url' => asset('storage/' . $path),
         ]);
     } catch (\Exception $e) {
         return apiResponse(false, $e->getMessage(), 500);

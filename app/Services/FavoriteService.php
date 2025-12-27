@@ -3,11 +3,17 @@
 namespace App\Services;
 
 use App\Models\Favorite;
+use App\Models\AudioFeature;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class FavoriteService 
 {
+    public function __construct(
+        protected SpotifyService $spotifyService,
+    )
+    { 
+    }
     public function addToFavorite(array $data)
     {
         // $data should contain 'spotify_id'
@@ -64,47 +70,35 @@ class FavoriteService
         return $favorites;
     }
 
-    public function filterFavoritesByMood(string $mood)
+    public function filterFavoritesByMood(string $mood): array
     {
         $user = Auth::user();
 
-        $favorites = Favorite::where('user_id', $user->id)->get();
+        $spotifyIds = Favorite::where('user_id', $user->id)
+            ->pluck('spotify_id')
+            ->toArray();
 
-        if ($favorites->isEmpty()){
+        if (empty($spotifyIds)) {
             return [];
         }
 
-        $spotifyIds = $favorites->pluck('spotify_id')->toArray();
-
-        $tracks = app(SongService::class)->getSongsByIds($spotifyIds);
-        
-        
-        if(empty($tracks)) {
+        $features = AudioFeature::whereIn('spotify_id', $spotifyIds)->get();
+        if($features->isEmpty()){
             return [];
         }
+
+        $matchedSpotifyIds = [];
+
+        foreach($features as $feature){
+            if($this->matchMood($feature->toArray(), $mood)){
+                $matchedSpotifyIds[] = $feature->spotify_id;
+            }
+        }
+        if (empty($matchedSpotifyIds)) {
+            return [];
+        }
+        return $this->spotifyService->getSongsByIds(array_slice($matchedSpotifyIds, 0, 50));
         
-        $audioFeatures = app(SpotifyService::class)
-            ->getAudioFeaturesByIds($spotifyIds);
-            
-        return collect($tracks['tracks'] ?? [])
-            ->filter(function ($track) use ($audioFeatures, $mood){
-                $features = $audioFeatures[$track['id']] ?? null;
-                if(!$features){
-                    return false;
-                }
-                return $this->matchMood($features, $mood);
-            })
-
-            ->values()
-            ->all();
-            logger()->debug('Mood match result', [
-                'track_id' => $track['id'],
-                'mood' => $mood,
-                'matched' => $matched,
-                'energy' => $features['energy'] ?? null,
-                'valence' => $features['valence'] ?? null,
-            ]);
-
 
       
     }
