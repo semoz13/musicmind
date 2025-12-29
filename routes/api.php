@@ -33,7 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/favorites/{spotify_song_id}', [FavoriteController::class, 'destroy']);
     Route::get('/favorites/index', [FavoriteController::class, 'index']);
     Route::get('/favorites/filter-by-mood', [FavoriteController::class, 'filterByMood']);
-
+    
     Route::get('/artist', [ArtistController::class, 'getArtists']);
     Route::get('/artist/search', [ArtistController::class, 'search']);
     Route::get('/artists/{id}/songs', [ArtistController::class, 'topTracks']);
@@ -50,6 +50,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     //recommendation model 
-    Route::post('/songs/recommend', [RecommendationController::class, 'recommend']);
+    Route::post('/recommendation', [RecommendationController::class, 'recommend']);
 
 });

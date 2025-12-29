@@ -10,7 +10,7 @@ class RecommendationsService
     public function recommend(array $emotions): array
     {
         $response = Http::timeout(10)->post(
-            'http://127.0.0.1:5000/api/recommendations',
+            'http://127.0.0.1:5000/api/recommend',
             $emotions
         );
 
@@ -23,6 +23,6 @@ class RecommendationsService
         if (!$response->successful()){
             throw new \Exception('python recommendation service failed');
         }
-        return $response->json()['recommendations'] ?? [];
+        return $response->json();
     }
 }
