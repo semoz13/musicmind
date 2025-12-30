@@ -1,13 +1,14 @@
 <?php
 
-use App\Http\Controllers\ArtistController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FavoriteController;
-use App\Http\Controllers\RecommendationController;
-use App\Http\Controllers\SongController;
-use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SongController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ArtistController;
+use App\Http\Controllers\EmotionController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\RecommendationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -51,5 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //recommendation model 
     Route::post('/recommendation', [RecommendationController::class, 'recommend']);
+
+    //emotion predaction 
+    Route::post('/emotion', [EmotionController::class, 'predict']);
 
 });
