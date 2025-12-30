@@ -53,8 +53,9 @@ class UserService
     public function updateProfile(array $data)
     {
         /** @var \App\Models\User $user */
+       
         $user = Auth::user();
-
+       
         if (isset($data['avatar'])){
             if($user->avatar_url){
                 Storage::disk('public')->delete($user->avatar_url);

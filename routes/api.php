@@ -1,19 +1,20 @@
 <?php
 
-use App\Http\Controllers\ArtistController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FavoriteController;
-use App\Http\Controllers\RecommendationController;
-use App\Http\Controllers\SongController;
-use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SongController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ArtistController;
+use App\Http\Controllers\EmotionController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\RecommendationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware('auth:sanctum')->put('/profile', [UserController::class, 'updateProfile']);
+Route::middleware('auth:sanctum')->post('/profile', [UserController::class, 'updateProfile']);
 Route::middleware('auth:sanctum')->post('/change-password', [UserController::class, 'changePassword']);
 
 
@@ -29,10 +30,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/songs', [SongController::class, 'getSongsByIds']);
 
   
-    Route::apiResource('favorites', FavoriteController::class);
+    Route::post('favorites/add-to-favorite', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{spotify_song_id}', [FavoriteController::class, 'destroy']);
-    Route::post('/favorites/filter-by-mood', [FavoriteController::class, 'filterByMood']);
-
+    Route::get('/favorites/index', [FavoriteController::class, 'index']);
+    Route::get('/favorites/filter-by-mood', [FavoriteController::class, 'filterByMood']);
+    
     Route::get('/artist', [ArtistController::class, 'getArtists']);
     Route::get('/artist/search', [ArtistController::class, 'search']);
     Route::get('/artists/{id}/songs', [ArtistController::class, 'topTracks']);
@@ -49,6 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     //recommendation model 
-    Route::post('/songs/recommend', [RecommendationController::class, 'recommend']);
+    Route::post('/recommendation', [RecommendationController::class, 'recommend']);
+
+    //emotion predaction 
+    Route::post('/emotion', [EmotionController::class, 'predict']);
 
 });

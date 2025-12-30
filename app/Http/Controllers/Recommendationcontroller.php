@@ -13,70 +13,87 @@ class RecommendationController extends Controller
         Request $request,
         RecommendationsService $recommender,
         SongService $songService
-        ) {
+    ) {
         $validated = $request->validate([
-            'happiness' => 'required|numeric|min:0|max:10',
-            'sadness' => 'required|numeric|min:0|max:10',
-            'energy' => 'required|numeric|min:0|max:10',
-            'calmness' => 'required|numeric|min:0|max:10',
-            'danceability' => 'required|numeric|min:0|max:10',
-            'tempo' => 'required|numeric|min:0|max:10',
+            'happiness' => 'required|integer|min:0|max:100',
+            'sadness' => 'required|integer|min:0|max:100',
+            'energy' => 'required|integer|min:0|max:100',
+            'calmness' => 'required|integer|min:0|max:100',
+            'danceability' => 'required|integer|min:0|max:100',
+            'tempo' => 'required|integer|min:0|max:100',
+            'top_n' => 'nullable|integer|min:1|max:20'
         ]);
-        
+
         try {
-            // 1. Get AI recommendations from Python service
-            $aiRecommendations = $recommender->recommend($validated);
-            
-            if (empty($aiRecommendations)) {
+            // 1️⃣ Call Python AI service
+            $aiResponse = $recommender->recommend($validated);
+
+            $recommendations = $aiResponse['recommendations'] ?? [];
+
+            if (empty($recommendations)) {
                 return response()->json([
-                    'error' => 'No recommendations found',
+                    'success' => true,
+                    'count' => 0,
                     'data' => []
-                ], 404);
+                ]);
             }
-            
-            // 2. Enrich with Spotify data
+
+            // 2️⃣ Enrich with Spotify data
             $finalSongs = [];
-            foreach ($aiRecommendations as $rec) {
+
+            foreach ($recommendations as $rec) {
+
                 $searchQuery = $rec['track_name'] . ' ' . $rec['artists'];
-                
+
                 try {
                     $spotifyResult = $songService->searchSongs($searchQuery, 1);
-                    
+
                     if (!empty($spotifyResult['tracks']['items'][0])) {
                         $track = $spotifyResult['tracks']['items'][0];
+
                         $finalSongs[] = [
                             'spotify_id' => $track['id'],
                             'name' => $track['name'],
                             'artists' => collect($track['artists'])->pluck('name')->join(', '),
                             'album' => $track['album']['name'],
-                            'preview_url' => $track['preview_url'] ?? null,
-                            'album_image' => $track['album']['images'][0]['url'] ?? null,
-                            'spotify_url' => $track['external_urls']['spotify'] ?? null,
-                            'ai_similarity_score' => $rec['distance'],
+                            'image' => $track['album']['images'][0]['url'] ?? null,
+                            'preview_url' => $track['preview_url'],
+                            'distance' => $rec['distance'],
+                            'source' => 'spotify'
+                        ];
+                    } else {
+                        // fallback
+                        $finalSongs[] = [
+                            'spotify_id' => null,
+                            'name' => $rec['track_name'],
+                            'artists' => $rec['artists'],
+                            'album' => $rec['album_name'] ?? null,
+                            'image' => null,
+                            'preview_url' => null,
+                            'distance' => $rec['distance'],
+                            'source' => 'ai'
                         ];
                     }
                 } catch (\Exception $e) {
-                    Log::warning("Spotify search failed for: {$searchQuery}", [
+                    Log::error('Spotify search failed', [
+                        'query' => $searchQuery,
                         'error' => $e->getMessage()
                     ]);
-                    // Continue with next track
                     continue;
                 }
             }
-            
+
             return response()->json([
                 'success' => true,
+                'mood' => $aiResponse['mood'] ?? null,
+                'confidence' => $aiResponse['confidence'] ?? null,
                 'count' => count($finalSongs),
                 'data' => $finalSongs
             ]);
-            
+
         } catch (\Exception $e) {
-            Log::error('Recommendation failed', [
-                'error' => $e->getMessage(),
-                'input' => $validated
-            ]);
-            
             return response()->json([
+                'success' => false,
                 'error' => 'Recommendation service unavailable',
                 'message' => $e->getMessage()
             ], 503);
